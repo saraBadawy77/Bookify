@@ -25,12 +25,12 @@ function showErrorMessage(message = 'Something went wrong!') {
     });
 }
 
-function disableSubmitButton() {
-    $('body :submit').attr('disabled', 'disabled').attr('data-kt-indicator', 'on');
+function disableSubmitButton(btn) {
+    $(btn).attr('disabled', 'disabled').attr('data-kt-indicator', 'on');
 }
 
 function onModalBegin() {
-    disableSubmitButton();
+    disableSubmitButton($('#Modal').find(':submit'));
 }
 
 function onModalSuccess(row) {
@@ -40,7 +40,7 @@ function onModalSuccess(row) {
     if (updatedRow !== undefined) {
         datatable.row(updatedRow).remove().draw();
         updatedRow = undefined;
-    } 
+    }
 
     var newRow = $(row);
     datatable.row.add(newRow).draw();
@@ -168,7 +168,7 @@ $(document).ready(function () {
         }
 
         var isValid = $(this).valid();
-        if (isValid) disableSubmitButton(); 
+        if (isValid) disableSubmitButton($(this).find(':submit'));
     });
 
     //TinyMCE
@@ -272,6 +272,7 @@ $(document).ready(function () {
             }
         });
     });
+
     //Handle Confirm
     $('body').delegate('.js-confirm', 'click', function () {
         var btn = $(this);
@@ -306,6 +307,7 @@ $(document).ready(function () {
             }
         });
     });
+
     //Hanlde signout
     $('.js-signout').on('click', function () {
         $('#SignOut').submit();
