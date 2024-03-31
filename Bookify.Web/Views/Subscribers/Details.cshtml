@@ -10,6 +10,7 @@
     var statusClass = Model.IsBlackListed ? "danger" : lastSubscription.EndDate < DateTime.Today ? "warning" : "success";
 }
 
+
 <div class="alert bg-light-primary border border-primary border-3 border-dashed d-flex justify-content-between w-100 p-5 mb-10">
     <div class="d-flex align-items-center">
         <div class="symbol symbol-40px me-4">
@@ -92,7 +93,7 @@
                     <!--begin::Details item-->
                     <div class="fw-bold mt-5">Date of Birth</div>
                     <div class="text-gray-600">
-                        <p class="text-gray-600 text-hover-primary">@Model.DateOfBirth</p>
+                        <p class="text-gray-600 text-hover-primary">@Model.DateOfBirth.ToString("dd MMM, yyyy")</p>
                     </div>
                     <!--begin::Details item-->
                     <!--begin::Details item-->
@@ -139,7 +140,7 @@
                             <div class="card-header border-0">
                                 <!--begin::Card title-->
                                 <div class="card-title">
-                                    <h2 class="fw-bold">Reward Points</h2>
+                                    <h2 class="fw-bold"># of Rentals</h2>
                                 </div>
                                 <!--end::Card title-->
                             </div>
@@ -156,11 +157,10 @@
                                         </span>
                                         <!--end::Svg Icon-->
                                         <div class="ms-2">
-                                            4,571
-                                            <span class="text-muted fs-4 fw-semibold">Points earned</span>
+                                            <span id="TotalCopies">@Model.Rentals.Sum(r => r.NumberOfCopies)</span>
                                         </div>
                                     </div>
-                                    <div class="fs-7 fw-normal text-muted">Earn reward points with every purchase.</div>
+                                    <div class="fs-7 fw-normal text-muted">Total number of copies.</div>
                                 </div>
                             </div>
                             <!--end::Card body-->
@@ -301,9 +301,10 @@
     <!--end::Content-->
 </div>
 
+
 @section Scripts
 {
-    <script src="~/js/renew.js" asp-append-version="true"></script>
+    <script src="~/js/subscriber-details.js" asp-append-version="true"></script>
 }
 
 @section Plugins

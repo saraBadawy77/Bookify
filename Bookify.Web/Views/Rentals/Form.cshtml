@@ -1,13 +1,14 @@
 ﻿@model RentalFormViewModel
 
 @{
-    ViewData["Title"] = "Add Rental";
+    var title = Model.CurrentCopies.Any() ? "Edit" : "Add";
+    ViewData["Title"] = $"{title} Rental";
 }
 
 <!--begin::Card-->
 <div class="card mb-7">
     <div class="card-header">
-        <h3 class="card-title">Add Rental</h3>
+        <h3 class="card-title">@title Rental</h3>
     </div>
     <!--begin::Card body-->
     <div class="card-body">
@@ -25,9 +26,14 @@
         <!--end::Header-->
         <!--begin::Body-->
         <div class="card-body pt-5">
-            <form asp-action="Create" id="CopiesForm">
+            <form asp-controller="Rentals" id="CopiesForm">
                 <input type="hidden" asp-for="SubscriberKey" />
-                @* Copies will be added here *@
+                
+                @foreach (var copy in Model.CurrentCopies)
+                {
+                    <partial name="_CopyDetails" model="copy" />
+                }
+
                 <button type="submit" class="btn btn-primary d-none">
                     <span class="indicator-label">
                         Save

@@ -119,7 +119,7 @@ namespace Bookify.Web
                 emailBodyBuilder, emailSender);
 
             RecurringJob.AddOrUpdate(() => hangfireTasks.PrepareExpirationAlert(), "0 14 * * *");
-
+            RecurringJob.AddOrUpdate(() => hangfireTasks.RentalsExpirationAlert(), "0 14 * * *");
 
             app.MapControllerRoute(
                 name: "default",
