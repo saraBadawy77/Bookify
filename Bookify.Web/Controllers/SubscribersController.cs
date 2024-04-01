@@ -2,6 +2,7 @@
 using Bookify.Web.Core.Models;
 using Bookify.Web.Services;
 using Hangfire;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.Mvc;
@@ -14,6 +15,7 @@ using WhatsAppCloudApi.Services;
 
 namespace Bookify.Web.Controllers
 {
+    [Authorize(Roles = AppRoles.Reception)]
     public class SubscribersController : Controller
     {
         private readonly ApplicationDbContext _context;
