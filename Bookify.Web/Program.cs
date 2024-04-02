@@ -8,6 +8,7 @@ using Bookify.Web.Settings;
 using Bookify.Web.Tasks;
 using Hangfire;
 using Hangfire.Dashboard;
+using HashidsNet;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Identity;
@@ -48,7 +49,8 @@ namespace Bookify.Web
             });
 
             builder.Services.AddDataProtection().SetApplicationName(nameof(Bookify));
-            builder.Services.AddScoped<IUserClaimsPrincipalFactory<ApplicationUser>, ApplicationUserClaimsPrincipalFactory>();
+			builder.Services.AddSingleton<IHashids>(_ => new Hashids("f1nd1ngn3m0", minHashLength: 11));
+			builder.Services.AddScoped<IUserClaimsPrincipalFactory<ApplicationUser>, ApplicationUserClaimsPrincipalFactory>();
 
             builder.Services.AddTransient<IImageService, ImageService>();
             builder.Services.AddTransient<IEmailSender, EmailSender>();

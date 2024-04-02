@@ -12,6 +12,7 @@
     <PackageReference Include="Cloudinary" Version="0.0.5" />
     <PackageReference Include="CloudinaryDotNet" Version="1.26.0" />
     <PackageReference Include="Hangfire" Version="1.8.11" />
+    <PackageReference Include="Hashids.net" Version="1.7.0" />
     <PackageReference Include="Microsoft.AspNetCore.Components.QuickGrid.EntityFrameworkAdapter" Version="8.0.2" />
     <PackageReference Include="Microsoft.AspNetCore.Diagnostics.EntityFrameworkCore" Version="8.0.1" />
     <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="8.0.2" />
