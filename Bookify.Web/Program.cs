@@ -1,134 +1,114 @@
-using Bookify.Web.Core.Consts;
-using Bookify.Web.Core.Mapping;
-using Bookify.Web.Data;
-using Bookify.Web.Helpers;
+using Bookify.Web.Extensions;
 using Bookify.Web.Seeds;
 using Bookify.Web.Services;
-using Bookify.Web.Settings;
 using Bookify.Web.Tasks;
 using Hangfire;
 using Hangfire.Dashboard;
-using HashidsNet;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
-using Microsoft.EntityFrameworkCore;
-using System.Reflection;
-using UoN.ExpressiveAnnotations.NetCore.DependencyInjection;
-using WhatsAppCloudApi.Extensions;
+using Serilog;
+using Serilog.Context;
+using System.Security.Claims;
 using WhatsAppCloudApi.Services;
 
 namespace Bookify.Web
 {
-    public class Program
-    {
-        public static async Task Main(string[] args)
-        {
-            var builder = WebApplication.CreateBuilder(args);
+	public class Program
+	{
+		public static async Task Main(string[] args)
+		{
+			var builder = WebApplication.CreateBuilder(args);
 
-            // Add services to the container.
-            var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
-            builder.Services.AddDbContext<ApplicationDbContext>(options =>
-                options.UseSqlServer(connectionString));
+			// Add services to the container.
 
-           
-            builder.Services.AddDatabaseDeveloperPageExceptionFilter();
+			builder.Services.AddBookifyServices(builder);
 
-            
-            builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options => options.SignIn.RequireConfirmedAccount = true)
-            .AddEntityFrameworkStores<ApplicationDbContext>()
-            .AddDefaultUI()
-            .AddDefaultTokenProviders();
-            builder.Services.Configure<SecurityStampValidatorOptions>(options => options.ValidationInterval = TimeSpan.Zero);
-            builder.Services.Configure<IdentityOptions>(options =>
-            {
-                options.Password.RequiredLength = 8;
+			//Add Serilog
+			Log.Logger = new LoggerConfiguration().ReadFrom.Configuration(builder.Configuration).CreateLogger();
+			builder.Host.UseSerilog();
+			var app = builder.Build();
 
-                options.User.RequireUniqueEmail = true;
-            });
+			// Configure the HTTP request pipeline.
+			if (app.Environment.IsDevelopment())
+			{
+				app.UseMigrationsEndPoint();
+			}
+			else
+			{
+				app.UseExceptionHandler("/Home/Error");
+				// The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
+				app.UseHsts();
+			}
+			//app.UseExceptionHandler("/Home/Error");
+			app.UseStatusCodePagesWithReExecute("/Home/Error", "?statusCode={0}");
 
-            builder.Services.AddDataProtection().SetApplicationName(nameof(Bookify));
-			builder.Services.AddSingleton<IHashids>(_ => new Hashids("f1nd1ngn3m0", minHashLength: 11));
-			builder.Services.AddScoped<IUserClaimsPrincipalFactory<ApplicationUser>, ApplicationUserClaimsPrincipalFactory>();
 
-            builder.Services.AddTransient<IImageService, ImageService>();
-            builder.Services.AddTransient<IEmailSender, EmailSender>();
-            builder.Services.AddTransient<IEmailBodyBuilder, EmailBodyBuilder>();
+			app.UseHttpsRedirection();
+			app.UseStaticFiles();
 
-            builder.Services.AddControllersWithViews();
-            builder.Services.AddAutoMapper(Assembly.GetAssembly(typeof(MappingProfile)));
-            builder.Services.Configure<CloudinarySettings>(builder.Configuration.GetSection(nameof(CloudinarySettings)));
-            builder.Services.Configure<MailSettings>(builder.Configuration.GetSection(nameof(MailSettings)));
-            builder.Services.AddWhatsAppApiClient(builder.Configuration);
-            builder.Services.AddExpressiveAnnotations();
+			app.UseCookiePolicy(new CookiePolicyOptions
+			{
+				Secure = CookieSecurePolicy.Always
+			});
 
-            builder.Services.AddHangfire(x => x.UseSqlServerStorage(connectionString));
-            builder.Services.AddHangfireServer();
-            builder.Services.Configure<AuthorizationOptions>(options =>
-                options.AddPolicy("AdminsOnly", policy =>
-                  {
-                   policy.RequireAuthenticatedUser();
-                   policy.RequireRole(AppRoles.Admin);
-                  }));
-            var app = builder.Build();
+			app.Use(async (context, next) =>
+			{
+				context.Response.Headers.Add("X-Frame-Options", "Deny");
 
-            // Configure the HTTP request pipeline.
-            if (app.Environment.IsDevelopment())
-            {
-                app.UseMigrationsEndPoint();
-            }
-            else
-            {
-                app.UseExceptionHandler("/Home/Error");
-                // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
-                app.UseHsts();
-            }
+				await next();
+			});
+			app.UseRouting();
+			app.UseAuthentication();
+			app.UseAuthorization();
 
-            app.UseHttpsRedirection();
-            app.UseStaticFiles();
+			var scopeFactory = app.Services.GetRequiredService<IServiceScopeFactory>();
 
-            app.UseRouting();
-            app.UseAuthentication();
-            app.UseAuthorization();
+			using var scope = scopeFactory.CreateScope();
 
-            var scopeFactory = app.Services.GetRequiredService<IServiceScopeFactory>();
+			var roleManger = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
+			var userManger = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
 
-            using var scope = scopeFactory.CreateScope();
+			await DefaultRoles.SeedAsync(roleManger);
+			await DefaultUsers.SeedAdminUserAsync(userManger);
+			//hangfire
+			app.UseHangfireDashboard("/hangfire", new DashboardOptions
+			{
+				DashboardTitle = "Bookify Dashboard",
+				//IsReadOnlyFunc = (DashboardContext context) => true,
+				Authorization = new IDashboardAuthorizationFilter[]
+				{
+				  new HangfireAuthorizationFilter("AdminsOnly")
+				}
+			});
+			var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+			var webHostEnvironment = scope.ServiceProvider.GetRequiredService<IWebHostEnvironment>();
+			var whatsAppClient = scope.ServiceProvider.GetRequiredService<IWhatsAppClient>();
+			var emailBodyBuilder = scope.ServiceProvider.GetRequiredService<IEmailBodyBuilder>();
+			var emailSender = scope.ServiceProvider.GetRequiredService<IEmailSender>();
 
-            var roleManger = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
-            var userManger = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+			var hangfireTasks = new HangfireTasks(dbContext, webHostEnvironment, whatsAppClient,
+				emailBodyBuilder, emailSender);
 
-            await DefaultRoles.SeedAsync(roleManger);
-            await DefaultUsers.SeedAdminUserAsync(userManger);
-            //hangfire
-            app.UseHangfireDashboard("/hangfire", new DashboardOptions
-            {
-                DashboardTitle = "Bookify Dashboard",
-                //IsReadOnlyFunc = (DashboardContext context) => true,
-                Authorization = new IDashboardAuthorizationFilter[]
-                {
-                  new HangfireAuthorizationFilter("AdminsOnly")
-                }
-            });
-            var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-            var webHostEnvironment = scope.ServiceProvider.GetRequiredService<IWebHostEnvironment>();
-            var whatsAppClient = scope.ServiceProvider.GetRequiredService<IWhatsAppClient>();
-            var emailBodyBuilder = scope.ServiceProvider.GetRequiredService<IEmailBodyBuilder>();
-            var emailSender = scope.ServiceProvider.GetRequiredService<IEmailSender>();
+			RecurringJob.AddOrUpdate(() => hangfireTasks.PrepareExpirationAlert(), "0 14 * * *");
+			RecurringJob.AddOrUpdate(() => hangfireTasks.RentalsExpirationAlert(), "0 14 * * *");
 
-            var hangfireTasks = new HangfireTasks(dbContext, webHostEnvironment, whatsAppClient,
-                emailBodyBuilder, emailSender);
 
-            RecurringJob.AddOrUpdate(() => hangfireTasks.PrepareExpirationAlert(), "0 14 * * *");
-            RecurringJob.AddOrUpdate(() => hangfireTasks.RentalsExpirationAlert(), "0 14 * * *");
+			app.Use(async (context, next) =>
+			{
+				LogContext.PushProperty("UserId", context.User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
+				LogContext.PushProperty("UserName", context.User.FindFirst(ClaimTypes.Name)?.Value);
 
-            app.MapControllerRoute(
-                name: "default",
-                pattern: "{controller=Home}/{action=Index}/{id?}");
-            app.MapRazorPages();
+				await next();
+			});
 
-            app.Run();
-        }
-    }
+			app.UseSerilogRequestLogging();
+
+			app.MapControllerRoute(
+				name: "default",
+				pattern: "{controller=Home}/{action=Index}/{id?}");
+			app.MapRazorPages();
+
+			app.Run();
+		}
+	}
 }

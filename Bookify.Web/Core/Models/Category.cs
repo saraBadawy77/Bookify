@@ -1,9 +1,7 @@
-﻿using Microsoft.EntityFrameworkCore;
-
-namespace Bookify.Web.Core.Models
+﻿namespace Bookify.Web.Core.Models
 {
-    [Index(nameof(Name), IsUnique = true)]
-    public class Category:BaseModel
+	[Index(nameof(Name), IsUnique = true)]
+	public class Category : BaseModel
 	{
 		public int Id { get; set; }
 

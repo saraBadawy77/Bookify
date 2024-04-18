@@ -1,12 +1,10 @@
-using Bookify.Web.Core.ViewModels;
 using HashidsNet;
-using Microsoft.AspNetCore.Mvc;
-using System.Diagnostics;
+using Microsoft.AspNetCore.WebUtilities;
 
 namespace Bookify.Web.Controllers
 {
-    public class HomeController : Controller
-    {
+	public class HomeController : Controller
+	{
 		private readonly ApplicationDbContext _context;
 		private readonly IMapper _mapper;
 		private readonly ILogger<HomeController> _logger;
@@ -42,9 +40,9 @@ namespace Bookify.Web.Controllers
 
 
 		[ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
-        public IActionResult Error()
-        {
-            return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
-        }
-    }
+		public IActionResult Error(int statusCode = 500)
+		{
+			return View(new ErrorViewModel { ErrorCode = statusCode, ErrorDescription = ReasonPhrases.GetReasonPhrase(statusCode) });
+		}
+	}
 }

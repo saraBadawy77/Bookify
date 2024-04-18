@@ -1,42 +1,41 @@
 ﻿using HashidsNet;
-using Microsoft.AspNetCore.Mvc;
 
 namespace Bookify.Web.Controllers
 {
 	public class SearchController : Controller
 	{
 		private readonly ApplicationDbContext _context;
-        private readonly IMapper _mapper;
-        private readonly IHashids _hashids;
+		private readonly IMapper _mapper;
+		private readonly IHashids _hashids;
 
-        public SearchController(ApplicationDbContext context, IMapper mapper, IHashids hashids = null)
-        {
-            _context = context;
-            _mapper = mapper;
-            _hashids = hashids;
-        }
-
-
-
-        public IActionResult Index()
-        {
-            return View();
-        }
-
-        public IActionResult Find(string query)
-        {
-            var books = _context.Books
-                .Include(b => b.Author)
-                .Where(b => !b.IsDeleted && (b.Title.Contains(query) || b.Author!.Name.Contains(query)))
-                .Select(b => new { b.Title, Author = b.Author!.Name, Key = _hashids.EncodeHex(b.Id.ToString()) })
-                .ToList();
-
-            return Ok(books);
-        }
+		public SearchController(ApplicationDbContext context, IMapper mapper, IHashids hashids = null)
+		{
+			_context = context;
+			_mapper = mapper;
+			_hashids = hashids;
+		}
 
 
 
-        public IActionResult Details(string bKey)
+		public IActionResult Index()
+		{
+			return View();
+		}
+
+		public IActionResult Find(string query)
+		{
+			var books = _context.Books
+				.Include(b => b.Author)
+				.Where(b => !b.IsDeleted && (b.Title.Contains(query) || b.Author!.Name.Contains(query)))
+				.Select(b => new { b.Title, Author = b.Author!.Name, Key = _hashids.EncodeHex(b.Id.ToString()) })
+				.ToList();
+
+			return Ok(books);
+		}
+
+
+
+		public IActionResult Details(string bKey)
 		{
 			var bookId = _hashids.DecodeHex(bKey);
 

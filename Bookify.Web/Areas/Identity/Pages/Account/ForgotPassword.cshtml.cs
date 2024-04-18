@@ -2,28 +2,22 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 #nullable disable
 
-using System;
-using System.ComponentModel.DataAnnotations;
-using System.Text;
-using System.Text.Encodings.Web;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Authorization;
-using Bookify.Web.Core.Models;
+using Bookify.Web.Core.Consts;
+using Bookify.Web.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.WebUtilities;
-using Bookify.Web.Services;
-using Bookify.Web.Core.Consts;
+using System.Text;
+using System.Text.Encodings.Web;
 
 namespace Bookify.Web.Areas.Identity.Pages.Account
 {
-    public class ForgotPasswordModel : PageModel
-    {
-        private readonly UserManager<ApplicationUser> _userManager;
-        private readonly IEmailSender _emailSender;
-		
+	public class ForgotPasswordModel : PageModel
+	{
+		private readonly UserManager<ApplicationUser> _userManager;
+		private readonly IEmailSender _emailSender;
+
 		private readonly IEmailBodyBuilder _emailBodyBuilder;
 
 		public ForgotPasswordModel(UserManager<ApplicationUser> userManager, IEmailSender emailSender, IEmailBodyBuilder emailBodyBuilder)
@@ -38,22 +32,22 @@ namespace Bookify.Web.Areas.Identity.Pages.Account
 		///     directly from your code. This API may change or be removed in future releases.
 		/// </summary>
 		[BindProperty]
-        public InputModel Input { get; set; }
+		public InputModel Input { get; set; }
 
-        /// <summary>
-        ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
-        ///     directly from your code. This API may change or be removed in future releases.
-        /// </summary>
-        public class InputModel
-        {
-            /// <summary>
-            ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
-            ///     directly from your code. This API may change or be removed in future releases.
-            /// </summary>
-            [Required]
-            [EmailAddress]
-            public string Email { get; set; }
-        }
+		/// <summary>
+		///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
+		///     directly from your code. This API may change or be removed in future releases.
+		/// </summary>
+		public class InputModel
+		{
+			/// <summary>
+			///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
+			///     directly from your code. This API may change or be removed in future releases.
+			/// </summary>
+			[Required]
+			[EmailAddress]
+			public string Email { get; set; }
+		}
 		public async Task<IActionResult> OnPostAsync()
 		{
 			if (ModelState.IsValid)
@@ -75,17 +69,17 @@ namespace Bookify.Web.Areas.Identity.Pages.Account
 					values: new { area = "Identity", code },
 					protocol: Request.Scheme);
 
-                var placeholders = new Dictionary<string, string>()
-                {
-                    { "imageUrl", "https://res.cloudinary.com/sarabadawy/image/upload/v1710761501/icon-positive-vote-2_jcxdww_1_aic0lf.svg" },
-                    { "header", $"Hey {user.FullName}," },
-                    { "body", "please click the below button to reset you password" },
-                    { "url", $"{HtmlEncoder.Default.Encode(callbackUrl!)}" },
-                    { "linkTitle", "Reset Password" }
-                };
+				var placeholders = new Dictionary<string, string>()
+				{
+					{ "imageUrl", "https://res.cloudinary.com/sarabadawy/image/upload/v1710761501/icon-positive-vote-2_jcxdww_1_aic0lf.svg" },
+					{ "header", $"Hey {user.FullName}," },
+					{ "body", "please click the below button to reset you password" },
+					{ "url", $"{HtmlEncoder.Default.Encode(callbackUrl!)}" },
+					{ "linkTitle", "Reset Password" }
+				};
 
-                var body = _emailBodyBuilder.GetEmailBody(EmailTemplates.Email, placeholders);
-               
+				var body = _emailBodyBuilder.GetEmailBody(EmailTemplates.Email, placeholders);
+
 				await _emailSender.SendEmailAsync(
 					Input.Email,
 					"Reset Password",
